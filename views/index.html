@@ -1,0 +1,122 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Bot</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      margin: 0;
+      padding: 0;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      height: 100vh;
+      background-color: #f5f5f5;
+    }
+
+    #app {
+      background-color: #ffffff;
+      border-radius: 8px;
+      padding: 50px;
+      box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    }
+
+    form {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+    }
+
+    label {
+      margin-bottom: 10px;
+    }
+
+    input {
+      width: 100%;
+      padding: 10px;
+      margin-bottom: 20px;
+      border: 1px solid #ccc;
+      border-radius: 5px;
+      box-sizing: border-box;
+    }
+
+    button {
+      width: 100%;
+      padding: 10px;
+      background-color: #007bff;
+      color: #ffffff;
+      border: none;
+      border-radius: 5px;
+      cursor: pointer;
+    }
+
+    button:hover {
+      background-color: #0056b3;
+    }
+  </style>
+</head>
+<body>
+  <div id="app">
+    <!-- Form for adding bot URL -->
+    <form id="addBotForm">
+      <label for="botUrl">Enter Bot URL:</label>
+      <input type="text" id="botUrl" name="profileUrl" required>
+      <button type="submit">Add Bot URL</button>
+    </form>
+    
+    <!-- Form for checking bot -->
+    <form id="checkBotForm">
+      <label for="botUrlToCheck" style="margin-top: 10px;">Enter Bot URL to Check:</label>
+      <input type="text" id="botUrlToCheck" name="url" required>
+      <button type="submit">Check Bot URL</button>
+    </form>
+  </div>
+
+  <!-- JavaScript code -->
+  <script>
+    document.getElementById("addBotForm").addEventListener("submit", function(event) {
+      event.preventDefault();
+      
+      var formData = new FormData(this);
+      fetch('/addprofile', {
+        method: 'POST',
+        body: JSON.stringify(Object.fromEntries(formData)),
+        headers: {
+          'Content-Type': 'application/json'
+        }
+      })
+      .then(response => response.json())
+      .then(data => {
+        alert(data["User successfully added"]);
+      })
+      .catch(error => {
+        console.error('Error:', error);
+      });
+    });
+
+    document.getElementById("checkBotForm").addEventListener("submit", function(event) {
+      event.preventDefault();
+      
+      var formData = new FormData(this);
+      fetch('/urlcheck', {
+        method: 'POST',
+        body: JSON.stringify(Object.fromEntries(formData)),
+        headers: {
+          'Content-Type': 'application/json'
+        }
+      })
+      .then(response => response.json())
+      .then(data => {
+        if (data.valid) {
+          alert("Bot found");
+        } else {
+          alert("Bot not found");
+        }
+      })
+      .catch(error => {
+        console.error('Error:', error);
+      });
+    });
+  </script>
+</body>
+</html>
