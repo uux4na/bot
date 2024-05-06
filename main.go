@@ -7,6 +7,8 @@ import (
 
 	"cloud.google.com/go/firestore"
 	firebase "firebase.google.com/go"
+	"github.com/gin-contrib/cors"
+	"github.com/gin-gonic/contrib/static"
 	"github.com/gin-gonic/gin"
 	"google.golang.org/api/iterator"
 	"google.golang.org/api/option"
@@ -23,6 +25,8 @@ const (
 
 func setupRouter(client *firestore.Client) *gin.Engine {
 	r := gin.Default()
+	r.Use(cors.Default())
+	r.Use(static.Serve("/", static.LocalFile("./views", true)))
 
 	r.GET("/ping", func(c *gin.Context) {
 		c.String(http.StatusOK, "pong")
