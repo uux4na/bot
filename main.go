@@ -89,6 +89,63 @@ func setupRouter(client *firestore.Client) *gin.Engine {
 		c.JSON(http.StatusOK, gin.H{"User successfully added": user})
 	})
 
+	r.POST("/commentvalid", func(c *gin.Context) {
+		var requestBody map[string]string
+		if err := c.BindJSON(&requestBody); err != nil {
+			c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+			return
+		}
+		comment, exists := requestBody["comment"]
+		if !exists {
+			c.JSON(http.StatusBadRequest, gin.H{"error": "Comment is required"})
+			return
+		}
+
+		iter := client.Collection("bot-comments").Documents(ctx)
+		for {
+			doc, err := iter.Next()
+			if err == iterator.Done {
+				break
+			}
+			if err != nil {
+				log.Printf("Error querying Firestore: %v", err)
+				c.JSON(http.StatusInternalServerError, gin.H{"error": "Internal Server Error"})
+				return
+			}
+			firestoreURL := doc.Data()["comment"].(string)
+			if comment == firestoreURL {
+				c.JSON(http.StatusOK, gin.H{"valid": true, "message": "Comment found"})
+				return
+			}
+		}
+
+		c.JSON(http.StatusOK, gin.H{"valid": false, "message": "BOT not found"})
+	})
+
+	r.POST("/commentadd", func(c *gin.Context) {
+		var requestBody map[string]string
+		if err := c.BindJSON(&requestBody); err != nil {
+			c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+			return
+		}
+
+		comment, exists := requestBody["comment"]
+		if !exists {
+			c.JSON(http.StatusBadRequest, gin.H{"error": "comment is required"})
+			return
+		}
+
+		_, _, err := client.Collection("bot-comments").Add(ctx, map[string]interface{}{
+			"comment": comment,
+		})
+		if err != nil {
+			log.Printf("An error has occurred: %s", err)
+			c.JSON(http.StatusInternalServerError, gin.H{"error": "Internal Server Error"})
+			return
+		}
+		c.JSON(http.StatusOK, gin.H{"Comment successfully added": comment})
+	})
+
 	return r
 }
 

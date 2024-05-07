@@ -1,6 +1,6 @@
 module test
 
-go 1.23
+go 1.22.0
 
 require firebase.google.com/go v3.13.0+incompatible
 
