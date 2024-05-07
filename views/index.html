@@ -32,7 +32,7 @@
     }
 
     input {
-      width: 100%;
+      width: 110%;
       padding: 10px;
       margin-bottom: 20px;
       border: 1px solid #ccc;
@@ -41,7 +41,7 @@
     }
 
     button {
-      width: 100%;
+      width: 110%;
       padding: 10px;
       background-color: #007bff;
       color: #ffffff;
@@ -55,21 +55,38 @@
     }
   </style>
 </head>
-<body>
-  <div id="app">
-    <!-- Form for adding bot URL -->
-    <form id="addBotForm">
-      <label for="botUrl">Enter Bot URL:</label>
-      <input type="text" id="botUrl" name="profileUrl" required>
-      <button type="submit">Add Bot URL</button>
-    </form>
-    
-    <!-- Form for checking bot -->
-    <form id="checkBotForm">
-      <label for="botUrlToCheck" style="margin-top: 10px;">Enter Bot URL to Check:</label>
-      <input type="text" id="botUrlToCheck" name="url" required>
-      <button type="submit">Check Bot URL</button>
-    </form>
+<body style="display: flex; flex-direction: column; background-color:rgb(226, 226, 226);">
+  <h1 style="color: #007bff;">Techworm Bot DB</h1>
+  <div id="app" style="display: flex; flex-direction: row; gap: 40px;">
+    <div class="url" style="display:flex; flex-direction: column;">
+
+      <form id="addBotForm">
+        <label for="botUrl">Enter Bot URL:</label>
+        <input type="text" id="botUrl" name="profileUrl" required>
+        <button type="submit">Add Bot URL</button>
+      </form>
+
+      <form id="checkBotForm">
+        <label for="botUrlToCheck" style="margin-top: 10px;">Enter Bot URL to Check:</label>
+        <input type="text" id="botUrlToCheck" name="url" required>
+        <button type="submit">Check Bot URL</button>
+      </form>
+    </div>
+
+    <div class="comment" style="display:flex; flex-direction: column">
+      <form id="addCommentForm">
+      <label for="botUrl">Enter spam comment:</label>
+        <input type="text" id="botUrl" name="comment" required>
+        <button type="submit">Add new comment</button>
+      </form>
+
+      <form id="commentValidForm">
+        <label for="botUrlToCheck" style="margin-top: 10px;">Enter comment to Check:</label>
+        <input type="text" id="botUrlToCheck" name="comment" required>
+        <button type="submit">Check bot comment</button>
+      </form>
+    </div>
+
   </div>
 
   <!-- JavaScript code -->
@@ -117,6 +134,50 @@
         console.error('Error:', error);
       });
     });
+  
+    document.getElementById("addCommentForm").addEventListener("submit", function(event) {
+      event.preventDefault();
+      
+      var formData = new FormData(this);
+      fetch('/commentadd', {
+        method: 'POST',
+        body: JSON.stringify(Object.fromEntries(formData)),
+        headers: {
+          'Content-Type': 'application/json'
+        }
+      })
+      .then(response => response.json())
+      .then(data => {
+        alert("Comment successfully added");
+      })
+      .catch(error => {
+        console.error('Error:', error);
+      });
+    });
+
+    document.getElementById("commentValidForm").addEventListener("submit", function(event) {
+      event.preventDefault();
+      var formData = new FormData(this);
+      fetch('/commentvalid', {
+        method: 'POST',
+        body: JSON.stringify(Object.fromEntries(formData)),
+        headers: {
+          'Content-Type': 'application/json'
+        }
+      })
+      .then(response => response.json())
+      .then(data => {
+        if (data.valid) {
+          alert("Comment found");
+        } else {
+          alert("Comment not found");
+        }
+      })
+      .catch(error => {
+        console.error('Error:', error);
+      });
+    });
+  
   </script>
 </body>
 </html>
