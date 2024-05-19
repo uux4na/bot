@@ -40,13 +40,13 @@ func setupRouter(client *firestore.Client) *gin.Engine {
 			c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 			return
 		}
+
 		url, exists := requestBody["url"]
 		if !exists {
 			c.JSON(http.StatusBadRequest, gin.H{"error": "URL is required"})
 			return
 		}
 
-		// Using Firestore query to find matching documents
 		iter := client.Collection("bot-profiles").Where("url", "==", url).Documents(ctx)
 		for {
 			doc, err := iter.Next()
@@ -103,7 +103,6 @@ func setupRouter(client *firestore.Client) *gin.Engine {
 
 		c.JSON(http.StatusOK, gin.H{"message": "User successfully added", "profileUrl": user, "reason": reason})
 	})
-
 	r.POST("/commentvalid", func(c *gin.Context) {
 		var requestBody map[string]string
 		if err := c.BindJSON(&requestBody); err != nil {
@@ -116,7 +115,7 @@ func setupRouter(client *firestore.Client) *gin.Engine {
 			return
 		}
 
-		iter := client.Collection("bot-comments").Where("comment", "==", comment).Documents(ctx)
+		iter := client.Collection("bot-comments").Documents(ctx)
 		for {
 			doc, err := iter.Next()
 			if err == iterator.Done {
@@ -127,15 +126,14 @@ func setupRouter(client *firestore.Client) *gin.Engine {
 				c.JSON(http.StatusInternalServerError, gin.H{"error": "Internal Server Error"})
 				return
 			}
-
-			firestoreComment := doc.Data()["comment"].(string)
-			if comment == firestoreComment {
+			firestoreURL := doc.Data()["comment"].(string)
+			if comment == firestoreURL {
 				c.JSON(http.StatusOK, gin.H{"valid": true, "message": "Comment found"})
 				return
 			}
 		}
 
-		c.JSON(http.StatusOK, gin.H{"valid": false, "message": "Comment not found"})
+		c.JSON(http.StatusOK, gin.H{"valid": false, "message": "BOT not found"})
 	})
 
 	r.POST("/commentadd", func(c *gin.Context) {
@@ -190,7 +188,7 @@ func setupRouter(client *firestore.Client) *gin.Engine {
 
 func main() {
 	ctx = context.Background()
-	sa := option.WithCredentialsFile(firebaseConfigFile)
+	sa := option.WithCredentialsFile("./firebase.json")
 	app, err := firebase.NewApp(ctx, nil, sa)
 	if err != nil {
 		log.Fatalln(err)
