@@ -7,7 +7,10 @@ import (
 
 	"cloud.google.com/go/firestore"
 	firebase "firebase.google.com/go"
+	"github.com/gin-contrib/cors"
+	"github.com/gin-gonic/contrib/static"
 	"github.com/gin-gonic/gin"
+	"google.golang.org/api/iterator"
 	"google.golang.org/api/option"
 )
 
@@ -22,13 +25,44 @@ const (
 
 func setupRouter(client *firestore.Client) *gin.Engine {
 	r := gin.Default()
+	r.Use(cors.Default())
+	r.Use(static.Serve("/", static.LocalFile("./views", true)))
 
 	r.GET("/ping", func(c *gin.Context) {
 		c.String(http.StatusOK, "pong")
 	})
 
-	r.GET("/urlcheck/:url", func(c *gin.Context) {
+	r.POST("/urlcheck", func(c *gin.Context) {
+		var requestBody map[string]string
+		if err := c.BindJSON(&requestBody); err != nil {
+			c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+			return
+		}
+		url, exists := requestBody["url"]
+		if !exists {
+			c.JSON(http.StatusBadRequest, gin.H{"error": "URL is required"})
+			return
+		}
 
+		iter := client.Collection("bot-profiles").Documents(ctx)
+		for {
+			doc, err := iter.Next()
+			if err == iterator.Done {
+				break
+			}
+			if err != nil {
+				log.Printf("Error querying Firestore: %v", err)
+				c.JSON(http.StatusInternalServerError, gin.H{"error": "Internal Server Error"})
+				return
+			}
+			firestoreURL := doc.Data()["url"].(string)
+			if url == firestoreURL {
+				c.JSON(http.StatusOK, gin.H{"valid": true, "message": "BOT found"})
+				return
+			}
+		}
+
+		c.JSON(http.StatusOK, gin.H{"valid": false, "message": "BOT not found"})
 	})
 
 	r.POST("/addprofile", func(c *gin.Context) {
@@ -52,9 +86,83 @@ func setupRouter(client *firestore.Client) *gin.Engine {
 			c.JSON(http.StatusInternalServerError, gin.H{"error": "Internal Server Error"})
 			return
 		}
-		c.JSON(http.StatusOK, gin.H{"user": user})
+		c.JSON(http.StatusOK, gin.H{"User successfully added": user})
 	})
 
+	r.POST("/commentvalid", func(c *gin.Context) {
+		var requestBody map[string]string
+		if err := c.BindJSON(&requestBody); err != nil {
+			c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+			return
+		}
+		comment, exists := requestBody["comment"]
+		if !exists {
+			c.JSON(http.StatusBadRequest, gin.H{"error": "Comment is required"})
+			return
+		}
+
+		iter := client.Collection("bot-comments").Documents(ctx)
+		for {
+			doc, err := iter.Next()
+			if err == iterator.Done {
+				break
+			}
+			if err != nil {
+				log.Printf("Error querying Firestore: %v", err)
+				c.JSON(http.StatusInternalServerError, gin.H{"error": "Internal Server Error"})
+				return
+			}
+			firestoreURL := doc.Data()["comment"].(string)
+			if comment == firestoreURL {
+				c.JSON(http.StatusOK, gin.H{"valid": true, "message": "Comment found"})
+				return
+			}
+		}
+
+		c.JSON(http.StatusOK, gin.H{"valid": false, "message": "BOT not found"})
+	})
+
+	r.POST("/commentadd", func(c *gin.Context) {
+		var requestBody map[string]string
+		if err := c.BindJSON(&requestBody); err != nil {
+			c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+			return
+		}
+
+		comment, exists := requestBody["comment"]
+		if !exists {
+			c.JSON(http.StatusBadRequest, gin.H{"error": "comment is required"})
+			return
+		}
+
+		_, _, err := client.Collection("bot-comments").Add(ctx, map[string]interface{}{
+			"comment": comment,
+		})
+		if err != nil {
+			log.Printf("An error has occurred: %s", err)
+			c.JSON(http.StatusInternalServerError, gin.H{"error": "Internal Server Error"})
+			return
+		}
+		c.JSON(http.StatusOK, gin.H{"Comment successfully added": comment})
+	})
+
+	r.GET("/total", func(c *gin.Context) {
+		count := 0
+		iter := client.Collection("bot-profiles").Documents(ctx)
+		for {
+			_, err := iter.Next()
+			if err == iterator.Done {
+				break
+			}
+			if err != nil {
+				log.Printf("Error querying Firestore: %v", err)
+				c.JSON(http.StatusInternalServerError, gin.H{"error": "Internal Server Error"})
+				return
+			}
+			count++
+		}
+		c.JSON(http.StatusOK, gin.H{"total": count})
+	})
 	return r
 }
 

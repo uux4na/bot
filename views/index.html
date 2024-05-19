@@ -1,0 +1,183 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Bot</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      margin: 0;
+      padding: 0;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      height: 100vh;
+      background-color: #f5f5f5;
+    }
+
+    #app {
+      background-color: #ffffff;
+      border-radius: 8px;
+      padding: 50px;
+      box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    }
+
+    form {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+    }
+
+    label {
+      margin-bottom: 10px;
+    }
+
+    input {
+      width: 110%;
+      padding: 10px;
+      margin-bottom: 20px;
+      border: 1px solid #ccc;
+      border-radius: 5px;
+      box-sizing: border-box;
+    }
+
+    button {
+      width: 110%;
+      padding: 10px;
+      background-color: #007bff;
+      color: #ffffff;
+      border: none;
+      border-radius: 5px;
+      cursor: pointer;
+    }
+
+    button:hover {
+      background-color: #0056b3;
+    }
+  </style>
+</head>
+<body style="display: flex; flex-direction: column; background-color:rgb(226, 226, 226);">
+  <h1 style="color: #007bff;">Techworm Bot DB</h1>
+  <div id="app" style="display: flex; flex-direction: row; gap: 40px;">
+    <div class="url" style="display:flex; flex-direction: column;">
+
+      <form id="addBotForm">
+        <label for="botUrl">Enter Bot URL:</label>
+        <input type="text" id="botUrl" name="profileUrl" required>
+        <button type="submit">Add Bot URL</button>
+      </form>
+
+      <form id="checkBotForm">
+        <label for="botUrlToCheck" style="margin-top: 10px;">Enter Bot URL to Check:</label>
+        <input type="text" id="botUrlToCheck" name="url" required>
+        <button type="submit">Check Bot URL</button>
+      </form>
+    </div>
+
+    <div class="comment" style="display:flex; flex-direction: column">
+      <form id="addCommentForm">
+      <label for="botUrl">Enter spam comment:</label>
+        <input type="text" id="botUrl" name="comment" required>
+        <button type="submit">Add new comment</button>
+      </form>
+
+      <form id="commentValidForm">
+        <label for="botUrlToCheck" style="margin-top: 10px;">Enter comment to Check:</label>
+        <input type="text" id="botUrlToCheck" name="comment" required>
+        <button type="submit">Check bot comment</button>
+      </form>
+    </div>
+
+  </div>
+
+  <!-- JavaScript code -->
+  <script>
+    document.getElementById("addBotForm").addEventListener("submit", function(event) {
+      event.preventDefault();
+      
+      var formData = new FormData(this);
+      fetch('/addprofile', {
+        method: 'POST',
+        body: JSON.stringify(Object.fromEntries(formData)),
+        headers: {
+          'Content-Type': 'application/json'
+        }
+      })
+      .then(response => response.json())
+      .then(data => {
+        alert(data["User successfully added"]);
+      })
+      .catch(error => {
+        console.error('Error:', error);
+      });
+    });
+
+    document.getElementById("checkBotForm").addEventListener("submit", function(event) {
+      event.preventDefault();
+      
+      var formData = new FormData(this);
+      fetch('/urlcheck', {
+        method: 'POST',
+        body: JSON.stringify(Object.fromEntries(formData)),
+        headers: {
+          'Content-Type': 'application/json'
+        }
+      })
+      .then(response => response.json())
+      .then(data => {
+        if (data.valid) {
+          alert("Bot found");
+        } else {
+          alert("Bot not found");
+        }
+      })
+      .catch(error => {
+        console.error('Error:', error);
+      });
+    });
+  
+    document.getElementById("addCommentForm").addEventListener("submit", function(event) {
+      event.preventDefault();
+      
+      var formData = new FormData(this);
+      fetch('/commentadd', {
+        method: 'POST',
+        body: JSON.stringify(Object.fromEntries(formData)),
+        headers: {
+          'Content-Type': 'application/json'
+        }
+      })
+      .then(response => response.json())
+      .then(data => {
+        alert("Comment successfully added");
+      })
+      .catch(error => {
+        console.error('Error:', error);
+      });
+    });
+
+    document.getElementById("commentValidForm").addEventListener("submit", function(event) {
+      event.preventDefault();
+      var formData = new FormData(this);
+      fetch('/commentvalid', {
+        method: 'POST',
+        body: JSON.stringify(Object.fromEntries(formData)),
+        headers: {
+          'Content-Type': 'application/json'
+        }
+      })
+      .then(response => response.json())
+      .then(data => {
+        if (data.valid) {
+          alert("Comment found");
+        } else {
+          alert("Comment not found");
+        }
+      })
+      .catch(error => {
+        console.error('Error:', error);
+      });
+    });
+  
+  </script>
+</body>
+</html>
