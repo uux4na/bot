@@ -61,12 +61,26 @@ func setupRouter(client *firestore.Client) *gin.Engine {
 
 			firestoreURL := doc.Data()["url"].(string)
 			if url == firestoreURL || strings.Contains(url, firestoreURL) {
-				c.JSON(http.StatusOK, gin.H{"valid": true, "message": "BOT found"})
+				var score int
+				if scoreVal, ok := doc.Data()["score"].(int64); ok {
+					score = int(scoreVal)
+				} else if scoreVal, ok := doc.Data()["score"].(int); ok {
+					score = scoreVal
+				} else {
+					score = 0
+				}
+
+				c.JSON(http.StatusOK, gin.H{
+					"valid":   true,
+					"message": "BOT Found",
+					"url":     firestoreURL,
+					"score":   score,
+				})
 				return
 			}
 		}
 
-		c.JSON(http.StatusOK, gin.H{"valid": false, "message": "BOT not found"})
+		c.JSON(http.StatusOK, gin.H{"valid": false, "message": "Bot Not Found"})
 	})
 
 	r.POST("/addprofile", func(c *gin.Context) {
