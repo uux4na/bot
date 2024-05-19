@@ -73,23 +73,33 @@ func setupRouter(client *firestore.Client) *gin.Engine {
 			return
 		}
 
-		user, exists := requestBody["profileUrl"]
-		if !exists {
-			c.JSON(http.StatusBadRequest, gin.H{"error": "profileUrl is required"})
+		user, userExists := requestBody["profileUrl"]
+		reason, reasonExists := requestBody["reason"]
+
+		if !userExists || !reasonExists {
+			missingFields := []string{}
+			if !userExists {
+				missingFields = append(missingFields, "profileUrl")
+			}
+			if !reasonExists {
+				missingFields = append(missingFields, "reason")
+			}
+			c.JSON(http.StatusBadRequest, gin.H{"error": "Missing fields", "fields": missingFields})
 			return
 		}
 
 		_, _, err := client.Collection("bot-profiles").Add(ctx, map[string]interface{}{
-			"url": user,
+			"url":    user,
+			"reason": reason,
 		})
 		if err != nil {
 			log.Printf("An error has occurred: %s", err)
 			c.JSON(http.StatusInternalServerError, gin.H{"error": "Internal Server Error"})
 			return
 		}
-		c.JSON(http.StatusOK, gin.H{"User successfully added": user})
-	})
 
+		c.JSON(http.StatusOK, gin.H{"message": "User successfully added", "profileUrl": user, "reason": reason})
+	})
 	r.POST("/commentvalid", func(c *gin.Context) {
 		var requestBody map[string]string
 		if err := c.BindJSON(&requestBody); err != nil {
