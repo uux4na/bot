@@ -6,6 +6,7 @@ import (
 	"net/http"
 
 	"cloud.google.com/go/firestore"
+	"cloud.google.com/go/firestore/apiv1/firestorepb"
 	firebase "firebase.google.com/go"
 	"github.com/gin-contrib/cors"
 	"github.com/gin-gonic/gin"
@@ -147,22 +148,28 @@ func setupRouter(client *firestore.Client) *gin.Engine {
 	})
 
 	r.GET("/total", func(c *gin.Context) {
-		count := 0
-		iter := client.Collection("bot-profiles").Documents(ctx)
-		for {
-			_, err := iter.Next()
-			if err == iterator.Done {
-				break
-			}
-			if err != nil {
-				log.Printf("Error querying Firestore: %v", err)
-				c.JSON(http.StatusInternalServerError, gin.H{"error": "Internal Server Error"})
-				return
-			}
-			count++
+		collection := client.Collection("bot-profiles")
+		query := collection.Query
+
+		aggregationQuery := query.NewAggregationQuery().WithCount("all")
+		results, err := aggregationQuery.Get(ctx)
+		if err != nil {
+			log.Printf("Error querying Firestore: %v", err)
+			c.JSON(http.StatusInternalServerError, gin.H{"error": "Internal Server Error"})
+			return
 		}
-		c.JSON(http.StatusOK, gin.H{"total": count})
+
+		count, ok := results["all"]
+		if !ok {
+			log.Printf("Error: couldn't get alias for COUNT from results")
+			c.JSON(http.StatusInternalServerError, gin.H{"error": "Internal Server Error"})
+			return
+		}
+
+		countValue := count.(*firestorepb.Value)
+		c.JSON(http.StatusOK, gin.H{"total": countValue.GetIntegerValue()})
 	})
+
 	return r
 }
 
